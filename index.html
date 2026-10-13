@@ -246,7 +246,8 @@ function readScroll() {
   const range = film.offsetHeight - innerHeight;
   target = clamp((scrollY - film.offsetTop) / range);
 }
-addEventListener("scroll", readScroll, { passive: true });
+let lastScroll = 0;
+addEventListener("scroll", () => { lastScroll = performance.now(); readScroll(); }, { passive: true });
 addEventListener("resize", readScroll);
 readScroll();
 
@@ -261,9 +262,19 @@ function frame() {
   if (idx !== active) { vids[active].classList.remove("on"); vids[idx].classList.add("on"); active = idx; }
   const v = vids[idx];
   if (idx + 1 < total && vids[idx + 1].preload !== "auto") vids[idx + 1].preload = "auto";
-  if (v.readyState >= 1 && v.duration) {
-    const t = Math.min(v.duration - 0.05, local * v.duration);
-    if (!seeking[idx] && Math.abs(v.currentTime - t) > 0.02) { seeking[idx] = true; v.currentTime = t; }
+  // idle (not scrolling): let the clip play on its own, looping; scrolling hands control back to the scrub
+  const idle = !reduce && performance.now() - lastScroll > 250 && current === target;
+  vids.forEach((vv, k) => { if (k !== idx && !vv.paused) vv.pause(); });
+  if (idle) {
+    v.loop = true;
+    if (v.paused && v.readyState >= 2) { const p = v.play(); if (p) p.catch(() => {}); }
+  } else {
+    if (!v.paused) v.pause();
+    v.loop = false;
+    if (v.readyState >= 1 && v.duration) {
+      const t = Math.min(v.duration - 0.05, local * v.duration);
+      if (!seeking[idx] && Math.abs(v.currentTime - t) > 0.02) { seeking[idx] = true; v.currentTime = t; }
+    }
   }
   // neighbours parked on their seam frames so a switch shows the right frame instantly
   if (idx + 1 < total) { const n = vids[idx + 1]; if (n.readyState >= 1 && n.currentTime !== 0 && !seeking[idx + 1]) { seeking[idx + 1] = true; n.currentTime = 0; } }
