@@ -7,7 +7,7 @@
 <link rel="icon" href="assets/img/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Hanken+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Nastaliq+Urdu:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Hanken+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{
   --coal:#0b0806; --coal-2:#15100c; --line:rgba(242,228,204,.12);
@@ -69,7 +69,7 @@ a{color:inherit}
   .chap,.chap.left,.chap.right{left:1.25rem;right:1.25rem;width:auto;top:auto;bottom:calc(2.5rem + env(safe-area-inset-bottom,0px));transform:none}
   .chap::before{display:none}
   .chap h1,.chap h2{font-size:clamp(2rem,9vw,2.8rem)}
-  .steps{display:none}
+  .steps,.cue{display:none}
 }
 
 /* after the film */
@@ -196,6 +196,8 @@ dishes.addEventListener("click", e => { const b = e.target.closest(".add"); if (
 const film = document.getElementById("film"), stage = document.getElementById("stage");
 const bar = document.getElementById("bar"), steps = document.getElementById("steps"), cue = document.getElementById("cue");
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const small = matchMedia("(max-width:860px)").matches || (navigator.connection && navigator.connection.saveData);
+const sfx = small ? "-m" : "";   // 854px clips and posters on phones, 1280px on desktop
 film.style.height = (SCENES.length * SCROLL_PER_SCENE + 100) + "vh";
 
 const glow = document.createElement("div"); glow.className = "glow"; stage.appendChild(glow);
@@ -206,7 +208,7 @@ const cx = cv.getContext("2d"); let cw = 0, ch = 0;
 const fit = () => { const d = Math.min(devicePixelRatio || 1, 1.5); cw = cv.width = innerWidth * d * .5; ch = cv.height = innerHeight * d * .5; };
 fit(); addEventListener("resize", fit);
 // warm sparks and soft steam rising slowly, so the plate stays alive while the scroll is still
-const bits = Array.from({ length: reduce ? 0 : 46 }, () => ({ x: Math.random(), y: Math.random(), r: .6 + Math.random() * 1.8, s: .015 + Math.random() * .05, w: Math.random() * 6, steam: Math.random() < .3 }));
+const bits = Array.from({ length: reduce ? 0 : small ? 16 : 46 }, () => ({ x: Math.random(), y: Math.random(), r: .6 + Math.random() * 1.8, s: .015 + Math.random() * .05, w: Math.random() * 6, steam: Math.random() < .3 }));
 function embers(tm) {
   cx.clearRect(0, 0, cw, ch);
   for (const b of bits) {
@@ -221,10 +223,10 @@ const vids = [], chaps = [], btns = [];
 SCENES.forEach((s, i) => {
   const n = i + 1;
   const v = document.createElement("video");
-  v.muted = true; v.playsInline = true; v.preload = i < 2 ? "auto" : "metadata";
+  v.muted = true; v.playsInline = true; v.preload = i < (small ? 1 : 2) ? "auto" : "metadata";
   v.setAttribute("muted", ""); v.setAttribute("playsinline", "");
-  v.poster = `assets/video/scene-0${n}-poster.jpg`;
-  v.src = `assets/video/scene-0${n}.mp4`;
+  v.poster = `assets/video/scene-0${n}-poster${sfx}.jpg`;
+  v.src = `assets/video/scene-0${n}${sfx}.mp4`;
   if (i === 0) v.classList.add("on");
   stage.insertBefore(v, stage.firstChild.nextSibling);
   vids.push(v);
@@ -247,7 +249,7 @@ SCENES.forEach((s, i) => {
 const loading = document.getElementById("loading");
 const done = () => loading.classList.add("done");
 vids[0].addEventListener("loadeddata", done, { once: true });
-setTimeout(done, 2500);
+setTimeout(done, small ? 900 : 2500);   // poster is already painted behind the loader
 
 // iOS needs a play() inside a gesture before seeking paints frames
 const prime = () => { vids.forEach(v => { const p = v.play(); if (p) p.then(() => v.pause()).catch(() => {}); }); removeEventListener("touchstart", prime); };
@@ -317,7 +319,7 @@ function frame() {
       const e = ease(p), d = (enter ? 1 : -0.6) * (1 - e) * 34;
       kids[j].style.opacity = e;
       kids[j].style.transform = `translateY(${d.toFixed(1)}px)`;
-      kids[j].style.filter = e < 0.99 && !reduce ? `blur(${((1 - e) * 6).toFixed(1)}px)` : "none";
+      kids[j].style.filter = e < 0.99 && !reduce && !small ? `blur(${((1 - e) * 6).toFixed(1)}px)` : "none";
     }
     c.classList.toggle("vis", shown > 0.5);
   });
