@@ -1,4 +1,4 @@
-Zafraan: realistic biryani scroll site (static version)
+Biryani Wala: realistic biryani scroll site (static version)
 
 Open it
   Double-click index.html. Chrome, Edge, Firefox and Safari all play it.
@@ -9,7 +9,7 @@ Open it
 
 What's inside
   index.html            page, styles and scroll script (content arrays at the top of the script)
-  assets/video/         six 1920px clips, one per cooking step, plus a poster (first frame) each
+  assets/video/         six 1280px clips, one per cooking step, plus a poster (first frame) each
   assets/img/           menu photos, order-band photo, favicon
 
 Tuning
